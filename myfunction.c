@@ -26,6 +26,7 @@
 
 
 
+
 /*
  * Global data used at various places in the program.
  */
@@ -89,10 +90,10 @@ struct zigzag {
 int GetCategory(signed int value_in) 
 {
    int value = abs(value_in);
-   //printf("%d ",value);
-   if (value == 1) {
-       return 1;
-   } else if(value >= 2 && value <= 3) {
+  
+   if (value == 0)  return 0;
+   else if (value == 1)  return 1;
+   else if(value >= 2 && value <= 3) {
        return 2;
    } else if(value >= 4 && value <= 7) {
        return 3;
@@ -206,10 +207,9 @@ char *argv[];
     
     ROWS = rows; 
     COLS = cols;
-    double quant;
     signed int diff=0,Curr_dc,code;
-    int row,col,dc_cate,ac_cate;
-    int i,j,rowLim,colLim, Len = ROWS*COLS;
+    int row,col,dc_cate,ac_cate,ac_sol;
+    int i,j, Len = ROWS*COLS;
     double input_array[64];
     double output_array[64];
     double dctq[ N ][ N ];
@@ -228,52 +228,64 @@ char *argv[];
         }
     
     init_huffman_tables(); // initializing huffman table
-    
-      printf("%d \n",N);
+
          for(row=0; row<ROWS ; row+=N) {
             for (col=0; col<COLS; col+=N){
-            
-             counter=0; rowLim = row+N; colLim = col+N;
+            printf(" block num: %d ", col/8);
+           
+             counter=0; 
              
                /* 8x8 block of data stored in 1D array */
-                     for(i=row; i < rowLim; i++){
-                        for(j = col; j < colLim; j++){ 
+                     for(i=row; i < (row+N); i++){
+                        for(j = col; j < (col+N); j++){ 
                             input_array [counter] =  buffer_im[i][j];
-                                //printf("data-  %f",input_array[counter]);
+                                //printf(" %2.1f ",input_array[counter]);
                
                            counter++;
                             }
                        }
+                       printf("\n"); 
              /* fDCT is done here*/
                 fdct( input_array, output_array );
                 counter=0;
+                /*
+               for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                           if (N==8*i) printf("\n");
+                           printf(" %2.1f ", output_array[i]);
+                          
+                           }
+                           printf("\n\n");
              /* DCT output data is converted into 2D array 
                 Each dct valu is quantized and rounded */
-
+                 
                  for(i=0;i<N;i++){
                    for(j=0;j<N; j++){    
-                     quant = output_array[counter];
-                      dctq[ i ][ j ] =  ROUND(quant/Quan_Lum[ i ][ j ]);
-                     // printf(" %2f ", dctq[ i ][ j ]);
+                   
+                     //dctq[ i ][ j ] = output_array[counter];
+                     dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
+                  
+                     // printf(" %2.1f ",dctq[ i ][ j ] );
                       counter++;
                      }
+                     
                    }  
+                   printf(" \n\n "); 
               /* zigzag order arrenged  here  */ 
                zigzagcode( zigzag_out, dctq );
-                    /* for ( i = 0 ; i < ( N * N ) ; i++ ) {
-                           printf(" %3.2f ", zigzag_out[i]);
+                    /*for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                           printf(" %2.1f ", zigzag_out[i]);
                            }
-                     printf(" \n\n "); */
+                     printf(" \n "); 
                      
               /* Find DC Differential value and write into file */       
                 
-                if (col==0) diff=(signed int)zigzag_out[0];
+                if (col==0 && row==0) diff=(signed int)zigzag_out[0];
                 else diff=(signed int)zigzag_out[0]-Curr_dc; 
                 Curr_dc= (signed int)zigzag_out[0];
                 dc_cate=GetCategory(diff);  
-               // printf("temp  and diff value %d  %d\n",Curr_dc, dc_cate);
+               printf("temp  and diff value %d  %d\n",Curr_dc, dc_cate);
            
-               // Problem here 
+              
                /* find the vlc and vli 
                /* write it into bitstream */
                
@@ -285,13 +297,22 @@ char *argv[];
           
             for ( i = 1; i < (N*N) ; i++ ) 
             {
+               
                 code=(signed int)zigzag_out[i];
                 //printf("code: %d \n",code);
 	        ac_cate=GetCategory(code);
+	        ac_sol =solve_category(code);
+	        //printf("ac_sol: %d  ac_cate :%d \n",ac_sol,ac_cate);
 	        if ( code == 0 ) {
 		    run++;
-                } else {
-		    if(run != 0) {
+		    if (run == 63)  
+		    {
+		    putvlcac(output,0,0);
+		    run=0;
+		    }
+                } 
+               if (run != 0 && code != 0){
+		    if(run <63) {
 		        while(run > 0) {
 			    if(run <= 16) {
 			    /* writes the encoded value with respect to run and category value  */
@@ -306,12 +327,14 @@ char *argv[];
 		      
 		        putvli(output,ac_cate,code);
 		     }
-		    if(run == 0) {
+		 
+		   
+	         }
+	      if(run == 0 && code != 0){
 		    putvlcac(output,run,ac_cate);
 		    putvli(output,ac_cate,code);
 		    } 
-		     
-	         }
+	         
              }      
                      
        
@@ -340,7 +363,7 @@ double output_data[ N ][ N ];
     int row;
     
     int col;
-    double result;
+    
         
     for ( i = 0 ; i < ( N * N ) ; i++ ) {
         row = ZigZag[ i ].row;
@@ -377,7 +400,7 @@ int input_data[ N ][ N ];
  * The expansion routine reads in the compressed data from the DCT file,
  * then writes out the decompressed grey scale file.
  */
-
+/*
 void ExpandFile( input, output, rows, cols,argc, argv )
 bitstream *input; 
 FILE *output; 

@@ -20,7 +20,7 @@ constants which are needed in transformations.                           */
 * const double *inblock: 8x8 block, contains pixel values to transform      *
 * double *outblock: 8x8 block for transfrom coefficients                    *
 *NOTE: inblock has to be scanned in horizontal order i.e. line by line      */ 
-extern void fdct(const double *inblock, double *outblock);
+extern  void fdct(const double *inblock, double *outblock);
 
 /*extern void idct(const double *inblock, double *outblock)                 *
 *2D inverse DCT transformation function for 8x8 blocks, uses  butterfly     *

@@ -17,8 +17,8 @@ int main(int argc, char *argv[])
     
     int rows = atoi(argv[4]);
     int cols = atoi(argv[5]);
-     printf("  width:  %d \n", rows);
-     printf("  height:  %d \n",cols);
+     printf("  width:  %d \n", cols);
+     printf("  height:  %d \n",rows);
      int fileLen = rows*cols;
      printf("  Length:  %d \n",fileLen);
      int counter=0;
@@ -55,9 +55,9 @@ int main(int argc, char *argv[])
               }
               if ((strcmp(argv[1],"decode"))==0){ 
               printf("Decoding Gray Image.....\n");   
-              bs= open_input_bitstream(argv[2]); 
-              ExpandFile(bs,output, rows, cols,argc, argv);
-           
+             // bs= open_input_bitstream(argv[2]); 
+              //ExpandFile(bs,output, rows, cols,argc, argv);
+             }
  
   close_bitstream(bs);
 

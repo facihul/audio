@@ -501,6 +501,8 @@ init_huffman_tables(void)
     {
       dc_lengths[i] = strlen(dc_code[i]);
       dc_table[i] = strtoul(dc_code[i],(char **) NULL,2); 
+     
+      
       if (dc_lengths[i] > 0)
 	{
           if (expand_tree(dc_code[i],i,dc_tree))
@@ -512,6 +514,7 @@ init_huffman_tables(void)
             }
 	}
     }
+ 
   ac_tree = (node *) malloc(sizeof(node));
   ac_tree->symbol0 = (node *) NULL;
   ac_tree->symbol1 = (node *) NULL;
@@ -622,6 +625,8 @@ putvlcdc(bitstream *bs, int category)
 
    
   putbits(bs,dc_table[category],dc_lengths[category]);
+  
+  //printf("%d %d",dc_table[category],dc_lengths[category] ); //checking the value 
 }
 
 void
@@ -647,6 +652,8 @@ putvlcac(bitstream *bs, int run, int category)
     }
    
   putbits(bs,ac_table[run][category],ac_lengths[run][category]);
+  
+  
 }
 
 /* vli functions */

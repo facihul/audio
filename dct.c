@@ -1,93 +1,98 @@
 #include "dct.h"
+#include <stdio.h>
 /*2D forward DCT transform*/
-void fdct(const double *inblock, double *outblock){
-  double s[8],t[8],r[8];
-  const double *p;
-  int j;
-  /*Horizontal direction*/
-  p=inblock;
-  for(j=0;j<64;j+=8)
-    {
-      /*First stage*/
-      s[0]=(*(p)+*(p+7));
-      s[1]=(*(p+1)+*(p+6));
-      s[2]=(*(p+2)+*(p+5));
-      s[3]=(*(p+3)+*(p+4));
-      s[4]=(*(p+3)-*(p+4));
-      s[5]=(*(p+2)-*(p+5));
-      s[6]=(*(p+1)-*(p+6));
-      s[7]=(*(p)-*(p+7));
-      /*Second stage*/
-      t[0]=s[0]+s[3];
-      t[1]=s[1]+s[2];
-      t[2]=s[1]-s[2];
-      t[3]=s[0]-s[3];
-      t[5]=(s[6]-s[5])*W3;
-      t[6]=(s[6]+s[5])*W3;
-      /*Third stage*/
-      r[4]=s[4]+t[5];
-      r[5]=s[4]-t[5];
-      r[6]=s[7]-t[6];
-      r[7]=s[7]+t[6];
-      /*Fourth stage*/
-      outblock[j]=(t[0]+t[1])*W3;
-      outblock[4+j]=(t[0]-t[1])*W3;
-      outblock[1+j]=(r[4]*W5+r[7]*W4);
-      outblock[7+j]=(r[7]*W5-r[4]*W4);
-      outblock[3+j]=(r[6]*W6-r[5]*W7);
-      outblock[5+j]=(r[5]*W6+r[6]*W7);
-      outblock[2+j]=(t[2]*W2+t[3]*W1);
-      outblock[6+j]=(t[3]*W2-t[2]*W1);
-      p +=8;
-    }
-      /*Vertical direction*/
-  for(j=0;j<8;j++)
-    {
-      /*First stage*/
-      s[0]=outblock[j]+outblock[j+56];
-      s[1]=outblock[j+8]+outblock[j+48];
-      s[2]=outblock[j+16]+outblock[j+40];
-      s[3]=outblock[j+24]+outblock[j+32];
-      s[4]=outblock[j+24]-outblock[j+32];
-      s[5]=outblock[j+16]-outblock[j+40];
-      s[6]=outblock[j+8]-outblock[j+48];
-      s[7]=outblock[j]-outblock[j+56];
-      /*Second stage*/
-      t[0]=s[0]+s[3];
-      t[1]=s[1]+s[2];
-      t[2]=s[1]-s[2];
-      t[3]=s[0]-s[3];
-      t[5]=(s[6]-s[5])*W3;
-      t[6]=(s[6]+s[5])*W3;
-      /*Third stage*/
-      r[4]=s[4]+t[5];
-      r[5]=s[4]-t[5];
-      r[6]=s[7]-t[6];
-      r[7]=s[7]+t[6];
-      /*Fourth stage, transform coefficients scaled by 2/N*/
-      outblock[j]=(t[0]+t[1])*W3/4.0;
-      outblock[32+j]=(t[0]-t[1])*W3/4.0;
-      outblock[8+j]=(r[4]*W5+r[7]*W4)/4.0;
-      outblock[56+j]=(r[7]*W5-r[4]*W4)/4.0;
-      outblock[24+j]=(r[6]*W6-r[5]*W7)/4.0;
-      outblock[40+j]=(r[5]*W6+r[6]*W7)/4.0;
-      outblock[16+j]=(t[2]*W2+t[3]*W1)/4.0;
-      outblock[48+j]=(t[3]*W2-t[2]*W1)/4.0;
-      
-    }
-    /*
-    for(j=0;j<8;j++){
-    printf(" %d",outblock[j]);
-    }*/
+void fdct(const double *inblock, double *outblock) {
+	double s[8], t[8], r[8];
+	const double *p;
+	int j,i,N=8;
+	/*Horizontal direction*/
+	p = inblock;
+	for (j = 0; j < 64; j += 8)
+	{
+		/*First stage*/
+		s[0] = (*(p)+*(p + 7));
+		s[1] = (*(p + 1) + *(p + 6));
+		s[2] = (*(p + 2) + *(p + 5));
+		s[3] = (*(p + 3) + *(p + 4));
+		s[4] = (*(p + 3) - *(p + 4));
+		s[5] = (*(p + 2) - *(p + 5));
+		s[6] = (*(p + 1) - *(p + 6));
+		s[7] = (*(p)-*(p + 7));
+		/*Second stage*/
+		t[0] = s[0] + s[3];
+		t[1] = s[1] + s[2];
+		t[2] = s[1] - s[2];
+		t[3] = s[0] - s[3];
+		t[5] = (s[6] - s[5])*W3;
+		t[6] = (s[6] + s[5])*W3;
+		/*Third stage*/
+		r[4] = s[4] + t[5];
+		r[5] = s[4] - t[5];
+		r[6] = s[7] - t[6];
+		r[7] = s[7] + t[6];
+		/*Fourth stage*/
+		outblock[j] = (t[0] + t[1])*W3;
+		outblock[4 + j] = (t[0] - t[1])*W3;
+		outblock[1 + j] = (r[4] * W5 + r[7] * W4);
+		outblock[7 + j] = (r[7] * W5 - r[4] * W4);
+		outblock[3 + j] = (r[6] * W6 - r[5] * W7);
+		outblock[5 + j] = (r[5] * W6 + r[6] * W7);
+		outblock[2 + j] = (t[2] * W2 + t[3] * W1);
+		outblock[6 + j] = (t[3] * W2 - t[2] * W1);
+		p += 8;
+	}
+	/*Vertical direction*/
+	for (j = 0; j < 8; j++)
+	{
+		/*First stage*/
+		s[0] = outblock[j] + outblock[j + 56];
+		s[1] = outblock[j + 8] + outblock[j + 48];
+		s[2] = outblock[j + 16] + outblock[j + 40];
+		s[3] = outblock[j + 24] + outblock[j + 32];
+		s[4] = outblock[j + 24] - outblock[j + 32];
+		s[5] = outblock[j + 16] - outblock[j + 40];
+		s[6] = outblock[j + 8] - outblock[j + 48];
+		s[7] = outblock[j] - outblock[j + 56];
+		/*Second stage*/
+		t[0] = s[0] + s[3];
+		t[1] = s[1] + s[2];
+		t[2] = s[1] - s[2];
+		t[3] = s[0] - s[3];
+		t[5] = (s[6] - s[5])*W3;
+		t[6] = (s[6] + s[5])*W3;
+		/*Third stage*/
+		r[4] = s[4] + t[5];
+		r[5] = s[4] - t[5];
+		r[6] = s[7] - t[6];
+		r[7] = s[7] + t[6];
+		/*Fourth stage, transform coefficients scaled by 2/N*/
+		outblock[j] = (t[0] + t[1])*W3 / 4.0;
+		outblock[32 + j] = (t[0] - t[1])*W3 / 4.0;
+		outblock[8 + j] = (r[4] * W5 + r[7] * W4) / 4.0;
+		outblock[56 + j] = (r[7] * W5 - r[4] * W4) / 4.0;
+		outblock[24 + j] = (r[6] * W6 - r[5] * W7) / 4.0;
+		outblock[40 + j] = (r[5] * W6 + r[6] * W7) / 4.0;
+		outblock[16 + j] = (t[2] * W2 + t[3] * W1) / 4.0;
+		outblock[48 + j] = (t[3] * W2 - t[2] * W1) / 4.0;
+	}
+	/*
+	for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                           
+                           printf(" %2.1f ", outblock[i]);
+                          
+                           }
+	*/
 }
 
 /*2D inverse DCT transfrom*/
 void idct(const double *inblock, double *outblock) {
-  double s[8],t[8],r[8];
-  const double *p;
-  int j;
-  /*Horizontal direction*/
-  p=inblock;
+	double s[8], t[8], r[8];
+	const double *p;
+	int j;
+	/*Horizontal direction*/
+	p = inblock;
+	
+
   for(j=0;j<64;j+=8)
     {
       /*First stage*/
@@ -163,3 +168,7 @@ void idct(const double *inblock, double *outblock) {
       outblock[j+56]=(s[0]-t[7])/4.0;
     }
 }
+
+
+
+
