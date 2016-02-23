@@ -231,7 +231,7 @@ char *argv[];
 
          for(row=0; row<ROWS ; row+=N) {
             for (col=0; col<COLS; col+=N){
-            printf(" block num: %d ", col/8);
+            printf(" block num: %d \n ", col/8);
            
              counter=0; 
              
@@ -272,7 +272,7 @@ char *argv[];
                    printf(" \n\n "); 
               /* zigzag order arrenged  here  */ 
                zigzagcode( zigzag_out, dctq );
-                    /*for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                    for ( i = 0 ; i < ( N * N ) ; i++ ) {
                            printf(" %2.1f ", zigzag_out[i]);
                            }
                      printf(" \n "); 
@@ -283,7 +283,7 @@ char *argv[];
                 else diff=(signed int)zigzag_out[0]-Curr_dc; 
                 Curr_dc= (signed int)zigzag_out[0];
                 dc_cate=GetCategory(diff);  
-               printf("temp  and diff value %d  %d\n",Curr_dc, dc_cate);
+               //printf("temp  and diff value %d  %d\n",Curr_dc, dc_cate);
            
               
                /* find the vlc and vli 
@@ -301,22 +301,25 @@ char *argv[];
                 code=(signed int)zigzag_out[i];
                 //printf("code: %d \n",code);
 	        ac_cate=GetCategory(code);
-	        ac_sol =solve_category(code);
-	        //printf("ac_sol: %d  ac_cate :%d \n",ac_sol,ac_cate);
+	        
+	       // printf("pixel %d run: %d  ac_cate :%d \n",i,run,ac_cate);
 	        if ( code == 0 ) {
 		    run++;
-		    if (run == 63)  
+		    printf("before end run = %d \n ",run);
+		    if (i == 63 && run != 0)  
 		    {
+		    printf("end of block run =%d \n",run);
 		    putvlcac(output,0,0);
 		    run=0;
 		    }
                 } 
-               if (run != 0 && code != 0){
-		    if(run <63) {
+              else if (run != 0 && code != 0){
+		    
 		        while(run > 0) {
 			    if(run <= 16) {
 			    /* writes the encoded value with respect to run and category value  */
-			        putvlcac(output,run -1,ac_cate);  
+			    printf("run = %d code=%d \n", run,code);
+			        putvlcac(output,run ,ac_cate);  
 			                                                                 
 			        run = 0;
 			    } else {
@@ -326,15 +329,16 @@ char *argv[];
 		        }
 		      
 		        putvli(output,ac_cate,code);
-		     }
+		   
 		 
 		   
 	         }
-	      if(run == 0 && code != 0){
+	     else if(run == 0 && code != 0){
+	           printf("run = %d category =%d \n", run,ac_cate);
 		    putvlcac(output,run,ac_cate);
 		    putvli(output,ac_cate,code);
 		    } 
-	         
+	        
              }      
                      
        
