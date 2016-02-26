@@ -14,8 +14,7 @@ open_input_bitstream(const char *path)
   if (bs != (bitstream *) NULL)
     {
       bs->stream = fopen(path,"rb");
-  
- if (bs->stream == (FILE *) NULL)
+      if (bs->stream == (FILE *) NULL)
         {
           free(bs);
           return (bitstream *) NULL;
@@ -67,7 +66,6 @@ close_bitstream(bitstream *bs)
 static int
 getbit(bitstream *bs)
 {
-
   if (bs == (bitstream *) NULL)
     {
       printf("TRYING TO READ FROM AN ILLEGAL BIT STREAM!\n");
@@ -76,10 +74,8 @@ getbit(bitstream *bs)
     }
   if (bs->mask == 1)
     {
-      
-     bs->waiting_byte = fgetc(bs->stream); 
+      bs->waiting_byte = fgetc(bs->stream);
       bs->mask = 0x80;
-      
     }
   else
     {
@@ -99,7 +95,7 @@ getbits(bitstream *bs, int numbits)
       value <<= 1;
       if (getbit(bs))
 	{
-	  value |= 1; 
+	  value |= 1;
 	}
     }
   return value;
@@ -110,7 +106,7 @@ putbit(bitstream *bs, int value)
 {
   if (bs == (bitstream *) NULL)
     {
-      printf("TRYING TO WRITE TO AN ILLEGAL BIT STREAM!\n"); 
+      printf("TRYING TO WRITE TO AN ILLEGAL BIT STREAM!\n");
       fflush(stdout);
       return;
     }
@@ -121,7 +117,6 @@ putbit(bitstream *bs, int value)
   bs->mask >>= 1;
   if (bs->mask == 0)
     {
-    
       fputc(bs->waiting_byte,bs->stream);
       bs->waiting_byte = 0;
       bs->mask = 0x80;
@@ -139,8 +134,7 @@ putbits(bitstream *bs, unsigned int value, int numbits)
     }
   for (mask = 1 << (numbits - 1); mask != 0; mask >>= 1)
     {
-      
-      putbit(bs,(value & mask)); 
+      putbit(bs,(value & mask) != 0);
     }
 }
 
@@ -393,7 +387,7 @@ ac_code[16][11] =
 };
 
 static int
-huffman_tables_initialized;
+huffman_tables_initialized = 0;
 
 static int
 dc_lengths[12];
@@ -500,9 +494,7 @@ init_huffman_tables(void)
   for (i = 0; i < 12; i++)
     {
       dc_lengths[i] = strlen(dc_code[i]);
-      dc_table[i] = strtoul(dc_code[i],(char **) NULL,2); 
-     
-      
+      dc_table[i] = strtoul(dc_code[i],(char **) NULL,2);
       if (dc_lengths[i] > 0)
 	{
           if (expand_tree(dc_code[i],i,dc_tree))
@@ -514,7 +506,6 @@ init_huffman_tables(void)
             }
 	}
     }
- 
   ac_tree = (node *) malloc(sizeof(node));
   ac_tree->symbol0 = (node *) NULL;
   ac_tree->symbol1 = (node *) NULL;
@@ -622,11 +613,7 @@ putvlcdc(bitstream *bs, int category)
       fflush(stdout);
       return;
     }
-
-   
   putbits(bs,dc_table[category],dc_lengths[category]);
-  
-  //printf("%d %d",dc_table[category],dc_lengths[category] ); //checking the value 
 }
 
 void
@@ -640,42 +627,33 @@ putvlcac(bitstream *bs, int run, int category)
     }
   if ((run < 0) || (run > 15) || (category < 0) || (category > 10))
     {
-      printf("ILLEGAL 1 AC (RUN,CATEGORY) PAIR!category,run %d, %d \n", category,run);
+      printf("ILLEGAL AC (RUN,CATEGORY) PAIR!\n");
       fflush(stdout);
       return;
     }
   if (ac_lengths[run][category] <= 0)
     {
-      printf("ILLEGAL 2  AC (RUN,CATEGORY) PAIR! category,run %d, %d \n", category,run);
+      printf("ILLEGAL AC (RUN,CATEGORY) PAIR!\n");
       fflush(stdout);
       return;
     }
-   
   putbits(bs,ac_table[run][category],ac_lengths[run][category]);
-  
-  
 }
 
 /* vli functions */
 
 int
 solve_category(signed int value)
-{   int absvalue = value;
-   if ( value < 0 )
-                   absvalue = -value;
-  
+{
+  int absvalue = abs(value);
   int category = 0;
-  
-int  top_of_range = 1;
-   int ac_cate = 0;
-             while ( absvalue > top_of_range ) 
-             {
-         if(absvalue > top_of_range) break;
-        ac_cate++; 
-        top_of_range = ( ( top_of_range + 1 ) * 2 ) - 1;
-            }
- 
-   return ac_cate;
+
+  while (absvalue != 0)
+    {
+      category++;
+      absvalue >>= 1;
+    }
+  return category;
 }
 
 signed int
@@ -727,7 +705,6 @@ putvli(bitstream *bs, int category, signed int value)
     {
       vli_code = (unsigned int) (value + (1 << category) - 1);
     }
-  
   putbits(bs,vli_code,category);
 }
 

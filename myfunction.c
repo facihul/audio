@@ -92,7 +92,9 @@ int GetCategory(signed int value_in)
    int value = abs(value_in);
   
    if (value == 0)  return 0;
+   
    else if (value == 1)  return 1;
+   
    else if(value >= 2 && value <= 3) {
        return 2;
    } else if(value >= 4 && value <= 7) {
@@ -168,21 +170,6 @@ bitstream *input_file;
 }
 
 
-/*
- * This routine writes out a strip of pixel data to a GS format file.
- */
-
-void WritePixelStrip( output, strip )
-FILE *output;
-int strip[ N ][ N ];
-{
-    int row;
-    int col;
-
-    for ( row = 0 ; row < N ; row++ )
-        for ( col = 0 ; col < N ; col++ )
-           putc( strip[ row ][ col ], output );
-}
 
 
 
@@ -207,35 +194,36 @@ char *argv[];
     
     ROWS = rows; 
     COLS = cols;
-    signed int diff=0,Curr_dc,code;
+    signed int diff=0,Curr_dc=0,code;
     int row,col,dc_cate,ac_cate,ac_sol;
-    int i,j, Len = ROWS*COLS;
+    int i,j,run =0,Len = ROWS*COLS;
     double input_array[64];
     double output_array[64];
-    double dctq[ N ][ N ];
+    double dctq[ N ][ N ],temp;
     double buffer_im[ROWS][ROWS];
     double zigzag_out[N*N];
     
-    
+   
       int counter=0;
          for(i=0; i<rows ;i++) {
-          for(j=0; j<cols ;j++){
+            for(j=0; j<cols ;j++){
              
-             buffer_im[i][j] = input[counter];
-             //printf("  %f",buffer_im[i][j]);
-             counter++;
-             }
-        }
+               buffer_im[i][j] = input[counter];
+               //printf("  %f",buffer_im[i][j]);
+               counter++;
+              }
+             
+           }
     
     init_huffman_tables(); // initializing huffman table
 
-         for(row=0; row<ROWS ; row+=N) {
+         for(row=0; row<ROWS ; row+=N) { 
             for (col=0; col<COLS; col+=N){
-            printf(" block num: %d \n ", col/8);
-           
-             counter=0; 
-             
-               /* 8x8 block of data stored in 1D array */
+                //printf(" block num: %d \n ", col/8);
+                counter=0; 
+                
+               /* 8x8 block of data is stored in 1D array 
+                   prepare for DCT , quantization and further compression to write into bitstream.*/
                      for(i=row; i < (row+N); i++){
                         for(j = col; j < (col+N); j++){ 
                             input_array [counter] =  buffer_im[i][j];
@@ -244,35 +232,36 @@ char *argv[];
                            counter++;
                             }
                        }
-                       printf("\n"); 
-             /* fDCT is done here*/
-                fdct( input_array, output_array );
-                counter=0;
-                /*
+                       //printf("\n"); 
+                   /* fDCT is done here*/
+                      fdct( input_array, output_array );
+                      counter=0;
+               /* 
                for ( i = 0 ; i < ( N * N ) ; i++ ) {
-                           if (N==8*i) printf("\n");
+                           //if (N==8*i) printf("\n");
                            printf(" %2.1f ", output_array[i]);
                           
                            }
                            printf("\n\n");
              /* DCT output data is converted into 2D array 
                 Each dct valu is quantized and rounded */
-                 
-                 for(i=0;i<N;i++){
-                   for(j=0;j<N; j++){    
-                   
-                     //dctq[ i ][ j ] = output_array[counter];
-                     dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
-                  
-                     // printf(" %2.1f ",dctq[ i ][ j ] );
+                 //printf("%2.1f",floor(-0.5));
+                     for(i=0;i<N;i++){
+                 //printf("\n");
+                        for(j=0;j<N; j++){    
+                          temp = output_array[counter]/Quan_Lum[ i ][ j ] +0.5;
+                          dctq[ i ][ j ]=floor(temp);
+                     //dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
+                     //printf(" %f  ",dctq[ i ][ j ] );
                       counter++;
                      }
                      
                    }  
-                   printf(" \n\n "); 
+                  
               /* zigzag order arrenged  here  */ 
+              // printf("ROW: %d, block: %d \n",row,col );
                zigzagcode( zigzag_out, dctq );
-                    for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                    /*for ( i = 0 ; i < ( N * N ) ; i++ ) {
                            printf(" %2.1f ", zigzag_out[i]);
                            }
                      printf(" \n "); 
@@ -282,8 +271,8 @@ char *argv[];
                 if (col==0 && row==0) diff=(signed int)zigzag_out[0];
                 else diff=(signed int)zigzag_out[0]-Curr_dc; 
                 Curr_dc= (signed int)zigzag_out[0];
-                dc_cate=GetCategory(diff);  
-               //printf("temp  and diff value %d  %d\n",Curr_dc, dc_cate);
+                dc_cate=solve_category(diff);  
+                printf("diff  and category %d  %d\n",diff,dc_cate);
            
               
                /* find the vlc and vli 
@@ -291,51 +280,70 @@ char *argv[];
                
               putvlcdc(output,dc_cate);  
               putvli(output,dc_cate,Curr_dc); 
-              int run =0;
+             
               
-          /*This for loop is finding ac category value and coreesponding runlength. */
+          /*This for loop is finding ac category value and coreesponding runlength. 
+          four conditions needs to take care: 
+          1: run=0 & code != 0
+          2: run=0 & code = 0 // run increments here
+          3: run!= 0 & code = 0 // EOB
+          4: run!= 0 & code != 0 
+          */
           
             for ( i = 1; i < (N*N) ; i++ ) 
             {
                
                 code=(signed int)zigzag_out[i];
                 //printf("code: %d \n",code);
-	        ac_cate=GetCategory(code);
+	       // ac_cate=GetCategory(code);
+	        ac_cate=solve_category(code);
 	        
-	       // printf("pixel %d run: %d  ac_cate :%d \n",i,run,ac_cate);
+	       //printf("pixel_value %d run: %d  ac_cate :%d \n",code,run,ac_cate);
+	       
+	       /* run = 0 & code = 0  
+	           run increments here */
 	        if ( code == 0 ) {
 		    run++;
-		    printf("before end run = %d \n ",run);
+		    //printf("before end run = %d \n ",run);
+		    
+		    /* run!= 0 & code = 0  
+		       EOB writing here */
 		    if (i == 63 && run != 0)  
 		    {
-		    printf("end of block run =%d \n",run);
-		    putvlcac(output,0,0);
+		   //printf("end of block run =%d \n",run);
+		  // printf("pixel_value %d  ac_cate :%d \n",code,ac_cate);
+		    putvlcac(output,0,0);                     
+		    putvli(output,0,0);
 		    run=0;
 		    }
                 } 
+                /*  run!= & code != 0  */
               else if (run != 0 && code != 0){
 		    
-		        while(run > 0) {
-			    if(run <= 16) {
+		        while(run > 0) {     // problem might here
+			    if(run < 16) {
 			    /* writes the encoded value with respect to run and category value  */
-			    printf("run = %d code=%d \n", run,code);
-			        putvlcac(output,run ,ac_cate);  
+			        
+			        //printf("run = %d code=%d ac_cate %d\n", run,code,ac_cate);
+			        putvlcac(output,run,ac_cate);  
 			                                                                 
 			        run = 0;
 			    } else {
-			        putvlcac(output,15L,ac_cate);
+			        //printf("ROW: %d, block: %d \n",row,col );
+			        //printf("pixel_value %d run: %d  ac_cate :%d \n",code,run,ac_cate);
+			        putvlcac(output,15,0);
 			        run -= 16;
+			        //printf(" %d \n",run);
 			    }		        	
 		        }
-		      
+		        
 		        putvli(output,ac_cate,code);
-		   
-		 
-		   
+		  
 	         }
+	        /* run=0 & code != 0 */
 	     else if(run == 0 && code != 0){
-	           printf("run = %d category =%d \n", run,ac_cate);
-		    putvlcac(output,run,ac_cate);
+	          // printf("run = %d category =%d \n", run,ac_cate);
+		    putvlcac(output,0,ac_cate);
 		    putvli(output,ac_cate,code);
 		    } 
 	        
