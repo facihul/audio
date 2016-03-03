@@ -194,32 +194,34 @@ char *argv[];
     
     ROWS = rows; 
     COLS = cols;
+    unsigned int val;
     signed int diff=0,Curr_dc=0,code;
     int row,col,dc_cate,ac_cate,ac_sol;
     int i,j,run =0,Len = ROWS*COLS;
     double input_array[64];
     double output_array[64];
     double dctq[ N ][ N ],temp;
-    double buffer_im[ROWS][ROWS];
+    double buffer_im[ROWS][COLS];
     double zigzag_out[N*N];
-    
-   
+  
       int counter=0;
-         for(i=0; i<rows ;i++) {
-            for(j=0; j<cols ;j++){
+         for(row=0; row<ROWS ; row++) {
+            for(col=0; col<COLS; col++){
              
-               buffer_im[i][j] = input[counter];
+               buffer_im[row][col] = input[counter];
                //printf("  %f",buffer_im[i][j]);
+               
                counter++;
+                
               }
              
            }
-    
+
     init_huffman_tables(); // initializing huffman table
 
          for(row=0; row<ROWS ; row+=N) { 
             for (col=0; col<COLS; col+=N){
-                //printf(" block num: %d \n ", col/8);
+                printf("block num: %d \n ", col/8);
                 counter=0; 
                 
                /* 8x8 block of data is stored in 1D array 
@@ -228,43 +230,48 @@ char *argv[];
                         for(j = col; j < (col+N); j++){ 
                             input_array [counter] =  buffer_im[i][j];
                                 //printf(" %2.1f ",input_array[counter]);
-               
+                                
+                             
                            counter++;
                             }
                        }
-                       //printf("\n"); 
+                       printf("\n"); 
                    /* fDCT is done here*/
                       fdct( input_array, output_array );
                       counter=0;
-               /* 
-               for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                
+              /* for ( i = 0 ; i < ( N * N ) ; i++ ) {
                            //if (N==8*i) printf("\n");
                            printf(" %2.1f ", output_array[i]);
-                          
+                            
+                             //val = (unsigned int)output_array[i];
+                             //putbits(output, val, 8);
                            }
                            printf("\n\n");
              /* DCT output data is converted into 2D array 
                 Each dct valu is quantized and rounded */
-                 //printf("%2.1f",floor(-0.5));
-                     for(i=0;i<N;i++){
-                 //printf("\n");
+                 
+                    for(i=0;i<N;i++){
                         for(j=0;j<N; j++){    
-                          temp = output_array[counter]/Quan_Lum[ i ][ j ] +0.5;
-                          dctq[ i ][ j ]=floor(temp);
-                     //dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
-                     //printf(" %f  ",dctq[ i ][ j ] );
+                          //temp = output_array[counter]/Quan_Lum[ i ][ j ] +0.5;
+                         // dctq[ i ][ j ]=floor(temp);
+                     dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
+                     printf(" %2.1f  ",dctq[ i ][ j ] );
+                    
                       counter++;
                      }
                      
                    }  
-                  
+                  printf(" \n "); 
               /* zigzag order arrenged  here  */ 
-              // printf("ROW: %d, block: %d \n",row,col );
+              
                zigzagcode( zigzag_out, dctq );
-                    /*for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                   /* for ( i = 0 ; i < ( N * N ) ; i++ ) {
                            printf(" %2.1f ", zigzag_out[i]);
                            }
                      printf(" \n "); 
+                   
+                   
                      
               /* Find DC Differential value and write into file */       
                 
@@ -272,14 +279,15 @@ char *argv[];
                 else diff=(signed int)zigzag_out[0]-Curr_dc; 
                 Curr_dc= (signed int)zigzag_out[0];
                 dc_cate=solve_category(diff);  
-                printf("diff  and category %d  %d\n",diff,dc_cate);
-           
+                //printf("put vli DC: \n");
+                //printf("dc_category: and current Dc:   %d  %d \n",dc_cate,Curr_dc );
+                // printf("%d ", diff);
               
                /* find the vlc and vli 
                /* write it into bitstream */
                
               putvlcdc(output,dc_cate);  
-              putvli(output,dc_cate,Curr_dc); 
+              putvli(output,dc_cate,diff); 
              
               
           /*This for loop is finding ac category value and coreesponding runlength. 
@@ -310,6 +318,7 @@ char *argv[];
 		       EOB writing here */
 		    if (i == 63 && run != 0)  
 		    {
+		    //printf("EOB ");
 		   //printf("end of block run =%d \n",run);
 		  // printf("pixel_value %d  ac_cate :%d \n",code,ac_cate);
 		    putvlcac(output,0,0);                     
@@ -320,40 +329,38 @@ char *argv[];
                 /*  run!= & code != 0  */
               else if (run != 0 && code != 0){
 		    
-		        while(run > 0) {     // problem might here
+		        while(run != 0) {     // problem might here
+			    //printf("vlc writing \n");
 			    if(run < 16) {
 			    /* writes the encoded value with respect to run and category value  */
-			        
-			        //printf("run = %d code=%d ac_cate %d\n", run,code,ac_cate);
+			       //printf("%d %d ",run,ac_cate);
+			       // printf("run = %d code=%d ac_cate %d\n", run,code,ac_cate);
 			        putvlcac(output,run,ac_cate);  
 			                                                                 
 			        run = 0;
 			    } else {
+			   
 			        //printf("ROW: %d, block: %d \n",row,col );
 			        //printf("pixel_value %d run: %d  ac_cate :%d \n",code,run,ac_cate);
 			        putvlcac(output,15,0);
-			        run -= 16;
+			        run -=16;
 			        //printf(" %d \n",run);
 			    }		        	
 		        }
-		        
+		       // printf("vli writing: ");
 		        putvli(output,ac_cate,code);
 		  
 	         }
 	        /* run=0 & code != 0 */
 	     else if(run == 0 && code != 0){
-	          // printf("run = %d category =%d \n", run,ac_cate);
+	    // printf("%d %d ",run,ac_cate);
+	          //printf("run = %d category =%d \n", run,ac_cate);
 		    putvlcac(output,0,ac_cate);
 		    putvli(output,ac_cate,code);
 		    } 
 	        
-             }      
-                     
-       
-             
-         
-          
-                     
+             }    
+                                 
           }   
         }    
             

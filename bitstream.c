@@ -118,6 +118,7 @@ putbit(bitstream *bs, int value)
   if (bs->mask == 0)
     {
       fputc(bs->waiting_byte,bs->stream);
+     // printf("After writing to bitstream the value is (bs->waiting_byte): %u \n", bs->waiting_byte);
       bs->waiting_byte = 0;
       bs->mask = 0x80;
     }
@@ -517,6 +518,7 @@ init_huffman_tables(void)
 	{
 	  ac_lengths[i][j] = strlen(ac_code[i][j]);
 	  ac_table[i][j] = strtoul(ac_code[i][j],(char **) NULL,2);
+	  //printf("%s \n",ac_code[i][j]);
 	  if (ac_lengths[i][j] > 0)
 	    {
               if (expand_tree(ac_code[i][j],(i << 4) | j,ac_tree))
@@ -529,6 +531,7 @@ init_huffman_tables(void)
 	    }
 	}
     }
+    
   huffman_tables_initialized = 1;
 }
 
@@ -638,6 +641,8 @@ putvlcac(bitstream *bs, int run, int category)
       return;
     }
   putbits(bs,ac_table[run][category],ac_lengths[run][category]);
+  
+  //printf("ac_table: and ac_length:  %d  %d  \n ", ac_table[run][category],ac_lengths[run][category]);
 }
 
 /* vli functions */

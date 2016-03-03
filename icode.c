@@ -17,8 +17,8 @@ int main(int argc, char *argv[])
     
     int rows = atoi(argv[4]);
     int cols = atoi(argv[5]);
-     printf("  width:  %d \n", cols);
-     printf("  height:  %d \n",rows);
+     //printf("  width:  %d \n", cols);
+    // printf("  height:  %d \n",rows);
      int fileLen = rows*cols;
      printf("  Length:  %d \n",fileLen);
      int counter=0;
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
       }
      
      } 
- 
+ // printf(" counter : %d", counter);
      
              if((strcmp(argv[1],"encode"))==0) {
 	      printf("Encoding Gray Image .....\n");
