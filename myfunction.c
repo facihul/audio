@@ -218,10 +218,12 @@ char *argv[];
            }
 
     init_huffman_tables(); // initializing huffman table
-
+int bN = 0;
          for(row=0; row<ROWS ; row+=N) { 
+         
             for (col=0; col<COLS; col+=N){
-                printf("block num: %d \n ", col/8);
+            
+                printf("block num: %d , row %d  col %d \n ", bN,row,col);
                 counter=0; 
                 
                /* 8x8 block of data is stored in 1D array 
@@ -235,12 +237,13 @@ char *argv[];
                            counter++;
                             }
                        }
-                       printf("\n"); 
+                       bN++;
+                      // printf("\n"); 
                    /* fDCT is done here*/
                       fdct( input_array, output_array );
                       counter=0;
                 
-              /* for ( i = 0 ; i < ( N * N ) ; i++ ) {
+             /*  for ( i = 0 ; i < ( N * N ) ; i++ ) {
                            //if (N==8*i) printf("\n");
                            printf(" %2.1f ", output_array[i]);
                             
@@ -256,17 +259,18 @@ char *argv[];
                           //temp = output_array[counter]/Quan_Lum[ i ][ j ] +0.5;
                          // dctq[ i ][ j ]=floor(temp);
                      dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
-                     printf(" %2.1f  ",dctq[ i ][ j ] );
+                    printf(" %2.1f  ",dctq[ i ][ j ] );
                     
                       counter++;
                      }
                      
                    }  
-                  printf(" \n "); 
+                   
+                  printf(" \n \n "); 
               /* zigzag order arrenged  here  */ 
               
                zigzagcode( zigzag_out, dctq );
-                   /* for ( i = 0 ; i < ( N * N ) ; i++ ) {
+                 /*   for ( i = 0 ; i < ( N * N ) ; i++ ) {
                            printf(" %2.1f ", zigzag_out[i]);
                            }
                      printf(" \n "); 
@@ -279,8 +283,8 @@ char *argv[];
                 else diff=(signed int)zigzag_out[0]-Curr_dc; 
                 Curr_dc= (signed int)zigzag_out[0];
                 dc_cate=solve_category(diff);  
-                //printf("put vli DC: \n");
-                //printf("dc_category: and current Dc:   %d  %d \n",dc_cate,Curr_dc );
+                printf("put vli DC: \n");
+                printf("dc_category: and diff:   %d  %d \n",dc_cate,diff );
                 // printf("%d ", diff);
               
                /* find the vlc and vli 
@@ -318,7 +322,7 @@ char *argv[];
 		       EOB writing here */
 		    if (i == 63 && run != 0)  
 		    {
-		    //printf("EOB ");
+		    printf("EOB ");
 		   //printf("end of block run =%d \n",run);
 		  // printf("pixel_value %d  ac_cate :%d \n",code,ac_cate);
 		    putvlcac(output,0,0);                     
@@ -330,30 +334,32 @@ char *argv[];
               else if (run != 0 && code != 0){
 		    
 		        while(run != 0) {     // problem might here
-			    //printf("vlc writing \n");
+			    //printf("vlcac writing \n");
 			    if(run < 16) {
 			    /* writes the encoded value with respect to run and category value  */
-			       //printf("%d %d ",run,ac_cate);
+			       printf("%d %d ",run,ac_cate);
 			       // printf("run = %d code=%d ac_cate %d\n", run,code,ac_cate);
 			        putvlcac(output,run,ac_cate);  
 			                                                                 
 			        run = 0;
 			    } else {
 			   
-			        //printf("ROW: %d, block: %d \n",row,col );
+			       // printf("ROW: %d, block: %d \n",row,bN );
 			        //printf("pixel_value %d run: %d  ac_cate :%d \n",code,run,ac_cate);
 			        putvlcac(output,15,0);
 			        run -=16;
-			        //printf(" %d \n",run);
+			        if(run == 0)
+			        putvlcac(output,0,ac_cate);
+			        printf(" run %d \n",run);
 			    }		        	
 		        }
-		       // printf("vli writing: ");
+		      // printf("vliac writing: \n");
 		        putvli(output,ac_cate,code);
 		  
 	         }
 	        /* run=0 & code != 0 */
 	     else if(run == 0 && code != 0){
-	    // printf("%d %d ",run,ac_cate);
+	          printf("%d %d ",run,ac_cate);
 	          //printf("run = %d category =%d \n", run,ac_cate);
 		    putvlcac(output,0,ac_cate);
 		    putvli(output,ac_cate,code);
