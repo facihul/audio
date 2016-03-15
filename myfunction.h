@@ -7,11 +7,11 @@ int COLS ;
 
 extern void ReadPixelStrip( double *input, double strip[ N ][ COLS ] );
 extern int InputCode( bitstream *input ); 
-extern void ReadDCTData( bitstream *input, int input_data[ N ][ N ] ); 
+extern void Make2D( double input_data[N*N], double output_data[ N * N ] ); 
 extern void OutputCode(bitstream *output_file, int code ); 
 extern void WritePixelStrip(FILE *output, int strip[ N ][ N ] );
 extern void CompressFile( double *input, bitstream *output, int rows, int cols, int argc, char *argv[]); 
-extern void ExpandFile( bitstream *input, FILE *output,int rows, int cols, int argc, char *argv[] ); 
+extern void ExpandFile( bitstream *input, char *output,int rows, int cols, int argc, char *argv[] ); 
 extern void zigzagcode( double zigzag_out[N*N], double output_data[N][N] );
 extern int GetCategory( signed int value);
 
@@ -21,7 +21,7 @@ extern int GetCategory( signed int value);
 
 void ReadPixelStrip();
 int InputCode();
-void ReadDCTData();
+void Make2D();
 void OutputCode();
 void WritePixelStrip();
 void CompressFile();

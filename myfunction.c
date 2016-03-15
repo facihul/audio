@@ -1,9 +1,5 @@
-/************************** Start of DCT.C *************************
- *
- * This is the DCT module, which implements a graphics compression
- * program based on the Discrete Cosine Transform.  It needs to be
- * linked with the standard support routines.
- *
+/************************** Start of compresion  *************************
+ 
  */
 
 #include <stdio.h>
@@ -20,21 +16,12 @@
 
 
 /*
- * This macro is used to ensure correct rounding of integer values.
- */
-#define ROUND( a )      ( ( (a) < 0 ) ? (int) ( (a) - 0.5 ) : (int) ( (a) + 0.5 ) )
-
-
-
-
-/*
  * Global data used at various places in the program.
  */
 
 
 
-int InputRunLength;
-int OutputRunLength;
+
 double Quan_Lum[ N ][ N ] = { {16, 11, 10, 16, 24, 40, 51, 61},
                              {12, 12, 14, 19, 26, 58, 60, 55},
                              {14, 13, 16, 24, 40, 57, 69, 56},
@@ -81,98 +68,7 @@ struct zigzag {
 };
 
 
-/*
- This routine finds the category value of the input data
  
- */
- 
- 
-int GetCategory(signed int value_in) 
-{
-   int value = abs(value_in);
-  
-   if (value == 0)  return 0;
-   
-   else if (value == 1)  return 1;
-   
-   else if(value >= 2 && value <= 3) {
-       return 2;
-   } else if(value >= 4 && value <= 7) {
-       return 3;
-   } else if(value >= 8 && value <= 15) {
-       return 4;
-   } else if(value >= 16 && value <= 31) {
-       return 5;
-   } else if(value >= 32 && value <= 63) {
-       return 6;
-   } else if(value >= 64 && value <= 127) {
-       return 7;
-   } else if(value >= 128 && value <= 255) {
-       return 8;
-   } else if(value >= 256 && value <= 511) {
-       return 9;
-   } else if(value >= 512 && value <= 1028) {
-       return 10;
-   }
-}
-
-
-/*
- *
- * A bit count of zero is followed by a four bit number telling how many
- * zeros are in the encoded run.  A value of 1 through ten indicates a
- * code value follows, which takes up that many bits.  The encoding of values
- * into this system has the following characteristics:
- *
- *         Bit Count               Amplitudes
- *         ---------       --------------------------
- *             0			0
- * 	       1                      -1, 1
- *             2                -3 to -2, 2 to 3
- *             3                -7 to -4, 4 to 7
- *             4               -15 to -8, 8 to 15
- *             5              -31 to -16, 16 to 31
- *             6              -63 to -32, 32 to 64
- *             7             -127 to -64, 64 to 127
- *             8            -255 to -128, 128 to 255
- *             9            -511 to -256, 256 to 511
- *            10           -1023 to -512, 512 to 1023
- *
- */
- 
- 
-int InputCode( input_file )
-bitstream *input_file; 
-{
-    int bit_count;
-    int result;
-
-    if ( InputRunLength > 0 ) {
-        InputRunLength--;
-        return( 0 );
-    }
-    bit_count = (int) getbits( input_file, 2 );
- 
-    if ( bit_count == 0 ) {
-        InputRunLength = (int) getbits( input_file, 4 );
-        return( 0 );
-    }
-    if ( bit_count == 1 )
-        bit_count = (int) getbits( input_file, 1 ) + 1; 
-    else{
-        bit_count = (int) getbits( input_file, 2 ) + ( bit_count << 2 ) - 5;
-	}
-    
-    result = (int) getbits( input_file, bit_count );
-    if ( result & ( 1 << ( bit_count - 1 ) ) )
-        return( result );
-    return( result - ( 1 << bit_count ) + 1 );
-}
-
-
-
-
-
 
 
 
@@ -218,12 +114,12 @@ char *argv[];
            }
 
     init_huffman_tables(); // initializing huffman table
-int bN = 0;
+    int bN = 0;
          for(row=0; row<ROWS ; row+=N) { 
          
             for (col=0; col<COLS; col+=N){
             
-                printf("block num: %d , row %d  col %d \n ", bN,row,col);
+                //printf("block num: %d , row %d  col %d \n ", bN,row,col);
                 counter=0; 
                 
                /* 8x8 block of data is stored in 1D array 
@@ -231,19 +127,19 @@ int bN = 0;
                      for(i=row; i < (row+N); i++){
                         for(j = col; j < (col+N); j++){ 
                             input_array [counter] =  buffer_im[i][j];
-                                //printf(" %2.1f ",input_array[counter]);
+                                printf(" %2.1f ",input_array[counter]);
                                 
                              
                            counter++;
                             }
                        }
                        bN++;
-                      // printf("\n"); 
+                       printf("\n"); 
                    /* fDCT is done here*/
                       fdct( input_array, output_array );
                       counter=0;
                 
-             /*  for ( i = 0 ; i < ( N * N ) ; i++ ) {
+             /* for ( i = 0 ; i < ( N * N ) ; i++ ) {
                            //if (N==8*i) printf("\n");
                            printf(" %2.1f ", output_array[i]);
                             
@@ -258,8 +154,8 @@ int bN = 0;
                         for(j=0;j<N; j++){    
                           //temp = output_array[counter]/Quan_Lum[ i ][ j ] +0.5;
                          // dctq[ i ][ j ]=floor(temp);
-                     dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
-                    printf(" %2.1f  ",dctq[ i ][ j ] );
+                          dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
+                          //printf(" %2.1f  ",dctq[ i ][ j ] );
                     
                       counter++;
                      }
@@ -283,9 +179,7 @@ int bN = 0;
                 else diff=(signed int)zigzag_out[0]-Curr_dc; 
                 Curr_dc= (signed int)zigzag_out[0];
                 dc_cate=solve_category(diff);  
-                printf("put vli DC: \n");
-                printf("dc_category: and diff:   %d  %d \n",dc_cate,diff );
-                // printf("%d ", diff);
+                
               
                /* find the vlc and vli 
                /* write it into bitstream */
@@ -306,25 +200,21 @@ int bN = 0;
             {
                
                 code=(signed int)zigzag_out[i];
-                //printf("code: %d \n",code);
-	       // ac_cate=GetCategory(code);
+               
 	        ac_cate=solve_category(code);
 	        
-	       //printf("pixel_value %d run: %d  ac_cate :%d \n",code,run,ac_cate);
+	       
 	       
 	       /* run = 0 & code = 0  
 	           run increments here */
 	        if ( code == 0 ) {
 		    run++;
-		    //printf("before end run = %d \n ",run);
-		    
+		 
 		    /* run!= 0 & code = 0  
 		       EOB writing here */
 		    if (i == 63 && run != 0)  
 		    {
-		    printf("EOB ");
-		   //printf("end of block run =%d \n",run);
-		  // printf("pixel_value %d  ac_cate :%d \n",code,ac_cate);
+		   
 		    putvlcac(output,0,0);                     
 		    putvli(output,0,0);
 		    run=0;
@@ -333,24 +223,21 @@ int bN = 0;
                 /*  run!= & code != 0  */
               else if (run != 0 && code != 0){
 		    
-		        while(run != 0) {     // problem might here
+		        while(run != 0) {     
 			    //printf("vlcac writing \n");
 			    if(run < 16) {
 			    /* writes the encoded value with respect to run and category value  */
-			       printf("%d %d ",run,ac_cate);
-			       // printf("run = %d code=%d ac_cate %d\n", run,code,ac_cate);
+			      
 			        putvlcac(output,run,ac_cate);  
 			                                                                 
 			        run = 0;
 			    } else {
 			   
-			       // printf("ROW: %d, block: %d \n",row,bN );
-			        //printf("pixel_value %d run: %d  ac_cate :%d \n",code,run,ac_cate);
 			        putvlcac(output,15,0);
 			        run -=16;
 			        if(run == 0)
 			        putvlcac(output,0,ac_cate);
-			        printf(" run %d \n",run);
+			        
 			    }		        	
 		        }
 		      // printf("vliac writing: \n");
@@ -359,7 +246,7 @@ int bN = 0;
 	         }
 	        /* run=0 & code != 0 */
 	     else if(run == 0 && code != 0){
-	          printf("%d %d ",run,ac_cate);
+	         // printf("%d %d ",run,ac_cate);
 	          //printf("run = %d category =%d \n", run,ac_cate);
 		    putvlcac(output,0,ac_cate);
 		    putvli(output,ac_cate,code);
@@ -375,8 +262,7 @@ int bN = 0;
       delete_huffman_tables();
 }
 /*
- This routine reads the 2D DCT data and arrange it in zigzag order and than quantized the data afterwords
- After quantization rounded value is returned.
+ This routine reads the 2D DCT data and arrange it in zigzag order 
 
 */
 
@@ -398,23 +284,28 @@ double output_data[ N ][ N ];
      }
 }
 /*
- * This routine reads in a block of encoded DCT data from a compressed file.
- * The routine reorders it in row major format, and dequantizes it using
- * the quantization matrix.
+ * This routine reads in a block of encoded data from a compressed file.
+ * The routine reorders it in row major format, 
  */
-/*
-void ReadDCTData( input_file, input_data )
-bitstream *input_file; 
-int input_data[ N ][ N ];
+
+void Make2D( input_data, output_data )
+double input_data[N*N]; 
+double output_data[ N * N ];
 {
+
+  int zigzag[64] = { 0,1,8,16,9,2,3,10,17,24,32,25,
+       18,11,4,5,12,19,26,33,40,48,41,34,27,20,13,6,7,14,21,28,
+       35,42,49,56,57,50,43,36,29,22,15,23,30,37,44,51,58,59,52,45,
+       38,31,39,46,53,60,61,54,47,55,62,63 };
+
     int i;
-    int row;
-    int col;
+   
     
     for ( i = 0 ; i < ( N * N ) ; i++ ) {
-        row = ZigZag[ i ].row;
-        col = ZigZag[ i ].col;
-        input_data[ row ][ col ] = InputCode( input_file )  * Quantum[ row ][ col ];
+        
+        output_data[ zigzag[i] ] = input_data[i];
+       
+       // printf(" %2.1f ", output_data[ row ][ col ]);
     }
   
 
@@ -425,41 +316,258 @@ int input_data[ N ][ N ];
  * The expansion routine reads in the compressed data from the DCT file,
  * then writes out the decompressed grey scale file.
  */
-/*
+
 void ExpandFile( input, output, rows, cols,argc, argv )
 bitstream *input; 
-FILE *output; 
+char *output; 
 int rows;
 int cols;
 int argc;
 char *argv[];
 {   
+   
     ROWS = rows;
     COLS = cols;
-    int row,dc_cat;
-    
-    int col,runlength,category;
-    int i;
+    int size=0,j,block=0,prevVlc=0;
+    double buffer_im[ROWS][COLS];
+    int *run,*cat;
+    int row,col,count,vliAc,runValue,dc_Value,i,categry,mRun,bufIndex;
+        int counter=0; 
     signed int vli; 
-    int input_array[ N ][ N ];
-    int output_array[ N ][ N ];
- 
-    //init_huffman_tables();
-                      // initializing huffman table
-       for ( row = 0 ; row < ROWS ; row += N ) {
-          for ( col = 0 ; col < COLS ; col += N ) {
-              input_array[row][col] = getbit(input);
-          }
-       }
-       
+    double input_array[ N*N];
+    double output_array[N*N];
+    double output_array1[ROWS*COLS];
+    double idct_out[N*N];
+      bitstream *bs1 =  open_output_bitstream(output);
       
-      // delete_huffman_tables();               // remove huffman tables from the memory  
+        fseek(input->stream, 0L, SEEK_END);
+	size = ftell(input->stream);
+	fseek(input->stream, SEEK_SET, 0);
+	
+    //printf(" %d \n ",size);
+    double data;
+    init_huffman_tables();
+    run = (int*)malloc(4*sizeof(int));
+    cat = (int*)malloc(4*sizeof(int));
+      
+       int tempInd = 0;
+       count = 0;
+     int tempCount = 0;
+     while (ftell(input->stream) != size)
+	{
+		bufIndex = 0;
+		memset(input_array, 0, sizeof(input_array));
+		/* Get the DC data */
+		dc_Value = getvlcdc(input);
+		vli = getvli(input, dc_Value);
+		
+		input_array[bufIndex++] = vli+prevVlc;
+		prevVlc = vli + prevVlc;
+             
+		/* Handle AC data */
+		count =0;
+		while(bufIndex < 63)
+		{
+			getvlcac(input,run,cat);
+			
+			runValue = *(run);
+			if(runValue > 0)
+			{
+				while (runValue >= 16)
+				{
+					count = count + runValue;
+					for (mRun = 0; mRun < runValue; mRun++)
+					{
+						input_array[bufIndex++] = 0;
+					}
+					getvlcac(input, run, cat);
+					runValue = *(run);
+					
+				}
+				count = count + runValue;
+				for (mRun = 0; mRun < runValue; mRun++)
+				{
+					input_array[bufIndex++] = 0;
+				}
+				vliAc = getvli(input, *cat);
+				input_array[bufIndex++] = vliAc;
+				
+			 }
+			
+			else
+			{
+				 vliAc = getvli(input,*cat);
+				 if(vliAc == 0)
+				 {
+					 while (bufIndex < 64)
+					 {
+						 input_array[bufIndex++] = 0;
+					 }
+					
+				 }
+				 else
+				 {
+					
+					 input_array[bufIndex++] = vliAc;
+					 count++;
+				 }
+			 }
+       
+             }// Loop ending AC Coeff
+             
+           // Inverse zigzag is done here.
+          
+              
+              
+      
+           Make2D(input_array, output_array );
+              counter = 0;
+/*             for ( i = 0 ; i <N ; i++ ) {*/
+/*                  for  ( j = 0 ; j < N ; j++ ) */
+/*                          printf(" %2.1f   ", output_array[i][j]);*/
+/*                          */
+/*                }       */
+/*                     printf(" \n "); */
+                     
+
+                          
+                        
+                     
+            //inverse quantization is done here 
+               
+                    
+             for(i=0;i<N;i++){
+                        for(j=0;j<N; j++){    
+                         
+         
+                         input_array[counter] = output_array[counter]*Quan_Lum[ i ][ j ];
+                         
+                       
+/*                         if (tempCount >=3099 && tempCount < 3100)*/
+/*                          printf(" %.1f  ", input_array[counter]);*/
+                          counter++; 
+                     }
+/*                     if (tempCount >=3099 && tempCount < 3100)*/
+/*                     printf(" \n");*/
+                  }   
+                   
+             // Inverse DCT is done here 
+             
+                
+                
+               /* 8x8 block of data is stored in 1D array 
+                   prepare for IDCT , quantization and further compression to write into bitstream.*/
+/*                     for(i=0; i < N; i++){*/
+/*                        for(j = 0; j < N; j++){ */
+/*                            input_array [counter] =  output_array[i][j];*/
+/*                                //printf(" %2.1f ",input_array[counter]);*/
+/*                                */
+/*                             */
+/*                           counter++;*/
+/*                            }*/
+/*                       }*/
+                      
+                      // printf("\n"); 
+                   /* fDCT is done here*/
+                   
+                      idct( input_array, idct_out );
+                      
+                  for (i = 0; i<N*N; i++ ){
+
+
+                     if (tempCount >=3099 && tempCount < 3100)
+                          printf(" %.3f  ", idct_out [i]);
+                     //printf(" %2.1f ",idct_out[i]);
+                     }
+                   /* IDCT output data is converted into 2D array */
+          counter = 0; 
+               for (i = 0; i<N*N; i++ ){
+                 
+                // output_array1[tempInd= input_array[counter];
+                  output_array1[tempInd] = idct_out[i];
+                  tempInd++;
+                  counter ++;
+                
+                }
+/*               unsigned int data = 0; */
+/*                    for(i=0;i<N;i++){*/
+/*                        for(j=0;j<N; j++){    */
+/*                         */
+/*                         output_array1[ i ][ j ]=idct_out[counter];*/
+/*                    output_array1[ i ][ j ]=((unsigned int)floor(output_array1[ i ][ j ]+0.5))+128;*/
+/*                         //data = (unsigned int)output_array[ i ][ j ];*/
+/*                          */
+/*                          printf(" %d  ",data);*/
+/*                          //putbits(bs1,data,8);*/
+/*                          //printf(" %2.1f  ",ou)tput_array[ i ][ j ]);*/
+/*                    */
+/*                      counter++;*/
+/*                     }*/
+/*                     */
+/*                   } */
+/*                   */
+             
+      
+ tempCount++;
+             
+          }  //end of the File 
+          
+          
+          
+  
+          
+     delete_huffman_tables();               // remove huffman tables from the memory  
+  
+        // Making 2d buffer array 
+                 counter=0;       
+                   for(row=0; row<ROWS ; row+=N) { 
+         
+                      for (col=0; col<COLS; col+=N){
+            
+                
+                
+                
+               /* 8x8 block of data is stored in 1D array 
+                   prepare for DCT , quantization and further compression to write into bitstream.*/
+                     for(i=row; i < (row+N); i++){
+                        for(j = col; j < (col+N); j++){ 
+                             buffer_im[i][j] = output_array1[counter];
+                                //printf(" %2.1f ",  buffer_im[i][j]);
+                                
+                             
+                           counter++;
+                            }
+                       }
+                   }
+                   
+               }
+               unsigned int dataV;
+               for(i=0; i < ROWS; i++){
+                        for(j = 0; j < COLS; j++){ 
+                            // buffer_im[i][j] = buffer_im[i][j];
+                             
+                            dataV =((unsigned int)floor( buffer_im[i][j]+0.5))+128 ; 
+                            if (dataV > 255) 
+                                dataV = 255;
+                            else if (dataV < 0 ) 
+                             dataV = 0;    
+                                
+                           putbits(bs1,dataV,8);  
+                                //printf(" %2.1f ",  buffer_im[i][j]);
+                                
+                             
+                           counter++;
+                            }
+                       }
+         
+                 
+
     
 }
 
 
-   
 
 
-/************************** End of DCT.C *************************/
+
+/************************** End of compression *************************/
 

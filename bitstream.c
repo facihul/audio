@@ -118,7 +118,6 @@ putbit(bitstream *bs, int value)
   if (bs->mask == 0)
     {
       fputc(bs->waiting_byte,bs->stream);
-     // printf("After writing to bitstream the value is (bs->waiting_byte): %u \n", bs->waiting_byte);
       bs->waiting_byte = 0;
       bs->mask = 0x80;
     }
