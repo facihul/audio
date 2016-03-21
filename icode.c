@@ -17,14 +17,15 @@ int main(int argc, char *argv[])
     
     int rows = atoi(argv[4]);
     int cols = atoi(argv[5]);
-     //printf("  width:  %d \n", cols);
-    // printf("  height:  %d \n",rows);
-     int fileLen = rows*cols;
+    int fileLen = rows*cols;
+    int counter=0;
+    double buffer[fileLen],temp; 
+    unsigned char ch_read;
+     
+    printf("  width:  %d \n", cols);
+    printf("  height:  %d \n",rows);
+ 
      printf("  Length:  %d \n",fileLen);
-     int counter=0;
-     double buffer[fileLen]; 
-     double temp; 
-     unsigned char ch_read;
      
       
     if (image == NULL) {

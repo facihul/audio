@@ -640,8 +640,7 @@ putvlcac(bitstream *bs, int run, int category)
       return;
     }
   putbits(bs,ac_table[run][category],ac_lengths[run][category]);
-  
-  //printf("ac_table: and ac_length:  %d  %d  \n ", ac_table[run][category],ac_lengths[run][category]);
+ 
 }
 
 /* vli functions */

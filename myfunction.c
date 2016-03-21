@@ -1,4 +1,4 @@
-/************************** Start of compresion  *************************
+/************************** Start of compression and decompression  *************************
  
  */
 
@@ -68,6 +68,56 @@ struct zigzag {
 };
 
 
+/*
+ This routine reads the 2D DCT data and arrange it in zigzag order 
+
+*/
+
+void zigzagcode(zigzag_out, output_data )
+double zigzag_out[N*N];
+double output_data[ N ][ N ];
+{
+    int i;
+    int row;
+    
+    int col;
+    
+        
+    for ( i = 0 ; i < ( N * N ) ; i++ ) {
+        row = ZigZag[ i ].row;
+        col = ZigZag[ i ].col;
+        zigzag_out[i] = output_data[ row ][ col ];
+		     
+     }
+}
+
+/*
+ * This routine reads in a block of encoded data from a compressed file.
+ * The routine reorders it in zigzag  format, 
+ */
+
+void inv_zigzag( input_data, output_data )
+double input_data[N*N]; 
+double output_data[ N * N ];
+{
+
+  int zigzag[64] = { 0,1,8,16,9,2,3,10,17,24,32,25,
+       18,11,4,5,12,19,26,33,40,48,41,34,27,20,13,6,7,14,21,28,
+       35,42,49,56,57,50,43,36,29,22,15,23,30,37,44,51,58,59,52,45,
+       38,31,39,46,53,60,61,54,47,55,62,63 };
+
+    int i;
+   
+    
+    for ( i = 0 ; i < ( N * N ) ; i++ ) {
+        
+        output_data[ zigzag[i] ] = input_data[i];
+       
+      
+    }
+  
+
+}
  
 
 
@@ -105,7 +155,7 @@ char *argv[];
             for(col=0; col<COLS; col++){
              
                buffer_im[row][col] = input[counter];
-               //printf("  %f",buffer_im[i][j]);
+               
                
                counter++;
                 
@@ -114,64 +164,46 @@ char *argv[];
            }
 
     init_huffman_tables(); // initializing huffman table
-    int bN = 0;
+    
          for(row=0; row<ROWS ; row+=N) { 
          
             for (col=0; col<COLS; col+=N){
             
-                //printf("block num: %d , row %d  col %d \n ", bN,row,col);
+             
                 counter=0; 
                 
                /* 8x8 block of data is stored in 1D array 
                    prepare for DCT , quantization and further compression to write into bitstream.*/
+                    
                      for(i=row; i < (row+N); i++){
                         for(j = col; j < (col+N); j++){ 
                             input_array [counter] =  buffer_im[i][j];
-                                printf(" %2.1f ",input_array[counter]);
-                                
-                             
-                           counter++;
+                            counter++;
                             }
                        }
-                       bN++;
-                       printf("\n"); 
-                   /* fDCT is done here*/
+                    
+             /* fDCT is done here*/
+                     
                       fdct( input_array, output_array );
                       counter=0;
-                
-             /* for ( i = 0 ; i < ( N * N ) ; i++ ) {
-                           //if (N==8*i) printf("\n");
-                           printf(" %2.1f ", output_array[i]);
-                            
-                             //val = (unsigned int)output_array[i];
-                             //putbits(output, val, 8);
-                           }
-                           printf("\n\n");
+             
              /* DCT output data is converted into 2D array 
                 Each dct valu is quantized and rounded */
                  
                     for(i=0;i<N;i++){
                         for(j=0;j<N; j++){    
-                          //temp = output_array[counter]/Quan_Lum[ i ][ j ] +0.5;
-                         // dctq[ i ][ j ]=floor(temp);
+                          
                           dctq[ i ][ j ]=floor(output_array[counter]/Quan_Lum[ i ][ j ]+0.5);
-                          //printf(" %2.1f  ",dctq[ i ][ j ] );
-                    
-                      counter++;
+                          counter++;
                      }
                      
                    }  
                    
-                  printf(" \n \n "); 
+                
               /* zigzag order arrenged  here  */ 
               
                zigzagcode( zigzag_out, dctq );
-                 /*   for ( i = 0 ; i < ( N * N ) ; i++ ) {
-                           printf(" %2.1f ", zigzag_out[i]);
-                           }
-                     printf(" \n "); 
-                   
-                   
+                 
                      
               /* Find DC Differential value and write into file */       
                 
@@ -240,14 +272,13 @@ char *argv[];
 			        
 			    }		        	
 		        }
-		      // printf("vliac writing: \n");
+		      
 		        putvli(output,ac_cate,code);
 		  
 	         }
 	        /* run=0 & code != 0 */
 	     else if(run == 0 && code != 0){
-	         // printf("%d %d ",run,ac_cate);
-	          //printf("run = %d category =%d \n", run,ac_cate);
+	        
 		    putvlcac(output,0,ac_cate);
 		    putvli(output,ac_cate,code);
 		    } 
@@ -261,59 +292,12 @@ char *argv[];
   
       delete_huffman_tables();
 }
-/*
- This routine reads the 2D DCT data and arrange it in zigzag order 
 
-*/
 
-void zigzagcode(zigzag_out, output_data )
-double zigzag_out[N*N];
-double output_data[ N ][ N ];
-{
-    int i;
-    int row;
-    
-    int col;
-    
-        
-    for ( i = 0 ; i < ( N * N ) ; i++ ) {
-        row = ZigZag[ i ].row;
-        col = ZigZag[ i ].col;
-        zigzag_out[i] = output_data[ row ][ col ];
-		     
-     }
-}
-/*
- * This routine reads in a block of encoded data from a compressed file.
- * The routine reorders it in row major format, 
- */
-
-void Make2D( input_data, output_data )
-double input_data[N*N]; 
-double output_data[ N * N ];
-{
-
-  int zigzag[64] = { 0,1,8,16,9,2,3,10,17,24,32,25,
-       18,11,4,5,12,19,26,33,40,48,41,34,27,20,13,6,7,14,21,28,
-       35,42,49,56,57,50,43,36,29,22,15,23,30,37,44,51,58,59,52,45,
-       38,31,39,46,53,60,61,54,47,55,62,63 };
-
-    int i;
-   
-    
-    for ( i = 0 ; i < ( N * N ) ; i++ ) {
-        
-        output_data[ zigzag[i] ] = input_data[i];
-       
-       // printf(" %2.1f ", output_data[ row ][ col ]);
-    }
-  
-
-}
 
 /*
  
- * The expansion routine reads in the compressed data from the DCT file,
+ * The expansion routine reads in the compressed data from file,
  * then writes out the decompressed grey scale file.
  */
 
@@ -328,11 +312,12 @@ char *argv[];
    
     ROWS = rows;
     COLS = cols;
-    int size=0,j,block=0,prevVlc=0;
+    int size=0,i,j,block=0,prevVlc=0;
     double buffer_im[ROWS][COLS];
     int *run,*cat;
-    int row,col,count,vliAc,runValue,dc_Value,i,categry,mRun,bufIndex;
-        int counter=0; 
+    int row,col,count,vliAc,runValue,dc_Value,categry,mRun,buf_count;
+    int counter=0,tempInd = 0; 
+    unsigned int dataV;    
     signed int vli; 
     double input_array[ N*N];
     double output_array[N*N];
@@ -343,30 +328,29 @@ char *argv[];
         fseek(input->stream, 0L, SEEK_END);
 	size = ftell(input->stream);
 	fseek(input->stream, SEEK_SET, 0);
-	
-    //printf(" %d \n ",size);
-    double data;
+
     init_huffman_tables();
+    
     run = (int*)malloc(4*sizeof(int));
     cat = (int*)malloc(4*sizeof(int));
-      
-       int tempInd = 0;
+    
+       
        count = 0;
-     int tempCount = 0;
+     
      while (ftell(input->stream) != size)
 	{
-		bufIndex = 0;
+		buf_count = 0;
 		memset(input_array, 0, sizeof(input_array));
 		/* Get the DC data */
 		dc_Value = getvlcdc(input);
 		vli = getvli(input, dc_Value);
 		
-		input_array[bufIndex++] = vli+prevVlc;
+		input_array[buf_count++] = vli+prevVlc;
 		prevVlc = vli + prevVlc;
              
 		/* Handle AC data */
 		count =0;
-		while(bufIndex < 63)
+		while(buf_count < 63)
 		{
 			getvlcac(input,run,cat);
 			
@@ -376,21 +360,21 @@ char *argv[];
 				while (runValue >= 16)
 				{
 					count = count + runValue;
-					for (mRun = 0; mRun < runValue; mRun++)
+					for (i = 0; i < runValue; i++)
 					{
-						input_array[bufIndex++] = 0;
+						input_array[buf_count++] = 0;
 					}
 					getvlcac(input, run, cat);
 					runValue = *(run);
 					
 				}
 				count = count + runValue;
-				for (mRun = 0; mRun < runValue; mRun++)
+				for (i = 0; i < runValue; i++)
 				{
-					input_array[bufIndex++] = 0;
+					input_array[buf_count++] = 0;
 				}
 				vliAc = getvli(input, *cat);
-				input_array[bufIndex++] = vliAc;
+				input_array[buf_count++] = vliAc;
 				
 			 }
 			
@@ -399,163 +383,93 @@ char *argv[];
 				 vliAc = getvli(input,*cat);
 				 if(vliAc == 0)
 				 {
-					 while (bufIndex < 64)
+					 while (buf_count < 64)
 					 {
-						 input_array[bufIndex++] = 0;
+						 input_array[buf_count++] = 0;
 					 }
 					
 				 }
 				 else
 				 {
 					
-					 input_array[bufIndex++] = vliAc;
+					 input_array[buf_count++] = vliAc;
 					 count++;
 				 }
 			 }
        
-             }// Loop ending AC Coeff
+             } // Loop ends with AC Coeffients calculation  
              
-           // Inverse zigzag is done here.
-          
-              
-              
-      
-           Make2D(input_array, output_array );
+           /* Inverse zigzag is done here.*/
+           
+            inv_zigzag(input_array, output_array );
               counter = 0;
-/*             for ( i = 0 ; i <N ; i++ ) {*/
-/*                  for  ( j = 0 ; j < N ; j++ ) */
-/*                          printf(" %2.1f   ", output_array[i][j]);*/
-/*                          */
-/*                }       */
-/*                     printf(" \n "); */
-                     
 
-                          
-                        
                      
-            //inverse quantization is done here 
+            /*inverse quantization is done here */
                
                     
              for(i=0;i<N;i++){
                         for(j=0;j<N; j++){    
-                         
-         
+                 
                          input_array[counter] = output_array[counter]*Quan_Lum[ i ][ j ];
-                         
-                       
-/*                         if (tempCount >=3099 && tempCount < 3100)*/
-/*                          printf(" %.1f  ", input_array[counter]);*/
-                          counter++; 
+                         counter++; 
                      }
-/*                     if (tempCount >=3099 && tempCount < 3100)*/
-/*                     printf(" \n");*/
+                 
                   }   
                    
-             // Inverse DCT is done here 
-             
-                
-                
-               /* 8x8 block of data is stored in 1D array 
-                   prepare for IDCT , quantization and further compression to write into bitstream.*/
-/*                     for(i=0; i < N; i++){*/
-/*                        for(j = 0; j < N; j++){ */
-/*                            input_array [counter] =  output_array[i][j];*/
-/*                                //printf(" %2.1f ",input_array[counter]);*/
-/*                                */
-/*                             */
-/*                           counter++;*/
-/*                            }*/
-/*                       }*/
-                      
-                      // printf("\n"); 
-                   /* fDCT is done here*/
-                   
-                      idct( input_array, idct_out );
-                      
-                  for (i = 0; i<N*N; i++ ){
-
-
-                     if (tempCount >=3099 && tempCount < 3100)
-                          printf(" %.3f  ", idct_out [i]);
-                     //printf(" %2.1f ",idct_out[i]);
-                     }
-                   /* IDCT output data is converted into 2D array */
-          counter = 0; 
+             /* Inverse DCT is done here */
+            
+              idct( input_array, idct_out );
+            /* IDCT outPut is stored in one big array to proces further*/
+          
+             counter = 0; 
                for (i = 0; i<N*N; i++ ){
-                 
-                // output_array1[tempInd= input_array[counter];
+                
                   output_array1[tempInd] = idct_out[i];
                   tempInd++;
                   counter ++;
                 
                 }
-/*               unsigned int data = 0; */
-/*                    for(i=0;i<N;i++){*/
-/*                        for(j=0;j<N; j++){    */
-/*                         */
-/*                         output_array1[ i ][ j ]=idct_out[counter];*/
-/*                    output_array1[ i ][ j ]=((unsigned int)floor(output_array1[ i ][ j ]+0.5))+128;*/
-/*                         //data = (unsigned int)output_array[ i ][ j ];*/
-/*                          */
-/*                          printf(" %d  ",data);*/
-/*                          //putbits(bs1,data,8);*/
-/*                          //printf(" %2.1f  ",ou)tput_array[ i ][ j ]);*/
-/*                    */
-/*                      counter++;*/
-/*                     }*/
-/*                     */
-/*                   } */
-/*                   */
-             
+
       
- tempCount++;
+        
              
           }  //end of the File 
           
-          
-          
-  
-          
+   
      delete_huffman_tables();               // remove huffman tables from the memory  
+     
+     /* Process data for writing to file */
+     
   
-        // Making 2d buffer array 
+        /* Making 2d buffer array */ 
                  counter=0;       
                    for(row=0; row<ROWS ; row+=N) { 
          
                       for (col=0; col<COLS; col+=N){
-            
-                
-                
-                
-               /* 8x8 block of data is stored in 1D array 
-                   prepare for DCT , quantization and further compression to write into bitstream.*/
-                     for(i=row; i < (row+N); i++){
-                        for(j = col; j < (col+N); j++){ 
-                             buffer_im[i][j] = output_array1[counter];
-                                //printf(" %2.1f ",  buffer_im[i][j]);
-                                
-                             
-                           counter++;
+           
+                         for(i=row; i < (row+N); i++){
+                             for(j = col; j < (col+N); j++){ 
+                                buffer_im[i][j] = output_array1[counter];
+                                counter++;
                             }
                        }
                    }
                    
                }
-               unsigned int dataV;
+               
+         /* Writing to file here */
+               
+              
                for(i=0; i < ROWS; i++){
                         for(j = 0; j < COLS; j++){ 
-                            // buffer_im[i][j] = buffer_im[i][j];
-                             
                             dataV =((unsigned int)floor( buffer_im[i][j]+0.5))+128 ; 
                             if (dataV > 255) 
                                 dataV = 255;
                             else if (dataV < 0 ) 
                              dataV = 0;    
                                 
-                           putbits(bs1,dataV,8);  
-                                //printf(" %2.1f ",  buffer_im[i][j]);
-                                
-                             
+                           putbits(bs1,dataV,8);  // writing to file 
                            counter++;
                             }
                        }
@@ -569,5 +483,5 @@ char *argv[];
 
 
 
-/************************** End of compression *************************/
+/************************** End of compression and decompression  *************************/
 
