@@ -1,4 +1,4 @@
-# image-
+
 
 his code is consist of four  different files icode.c , bitstream.c and dct.c myfunction.c with three header files bitstream.h and dct.h , myfunction.h. bitstream and dct files are downloaded from course webpage . Myfunction.c file is the whole implementation of the gray image (encoding and decoding)
 
